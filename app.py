@@ -1,158 +1,160 @@
 import streamlit as st
-import pandas as pd
-from streamlit_gsheets import GSheetsConnection
-from datetime import datetime
 import time
 
 # --- 1. PAGE CONFIG ---
 st.set_page_config(page_title="Megaworld BD Portal", page_icon="🏢", layout="wide")
 
-# --- 2. FIXED CUSTOM CSS ---
+# --- 2. ADVANCED CSS (Animations & Styling) ---
 st.markdown("""
     <style>
-    /* Force the main background color */
+    /* 1. Dotted Background Pattern */
     .stApp {
-        background-color: #f4f7f9;
+        background-color: #f0f4f8;
+        background-image: radial-gradient(#d1d1d1 1px, transparent 1px);
+        background-size: 30px 30px;
     }
 
-    /* Top Navigation Bar Styling */
-    .top-nav {
-        background-color: #0033a0; /* Megaworld Blue */
-        padding: 20px;
-        border-radius: 0px 0px 15px 15px;
-        color: white !important; /* Force text white */
-        text-align: center;
-        margin-bottom: 30px;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
-    }
-    .top-nav h1, .top-nav p {
-        color: white !important;
-        margin: 0;
-    }
-
-    /* Modern Login Card */
-    .login-card {
-        background-color: #ffffff; /* Pure white */
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0px 10px 30px rgba(0,0,0,0.1);
-        max-width: 450px;
-        margin: auto;
-        border: 1px solid #e0e0e0;
-    }
-
-    /* FORCE TEXT COLOR INSIDE LOGIN AREA */
-    .login-card h3, .login-card p, .login-card label, .login-card div {
-        color: #1f1f1f !important; /* Dark charcoal color */
-    }
-
-    /* Fix for Streamlit input labels (the text above boxes) */
-    .stWidgetLabel p {
-        color: #1f1f1f !important;
-        font-weight: 600 !important;
-    }
-
-    /* Animation */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .login-container {
-        animation: fadeIn 0.8s ease-out;
-    }
-
-    /* Button Styling */
-    .stButton>button {
+    /* 2. Splash Screen Overlay */
+    #splash-screen {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
         background-color: #0033a0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        color: white;
+        animation: fadeOut 1.5s forwards;
+        animation-delay: 2s;
+    }
+
+    /* 3. Animations */
+    @keyframes fadeOut { from {opacity: 1;} to {opacity: 0; visibility: hidden;} }
+    
+    @keyframes slideUp {
+        0% { opacity: 0; transform: translateY(50px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 4. Login Card Styling */
+    .login-card {
+        background-color: white;
+        padding: 50px;
+        border-radius: 15px;
+        box-shadow: 0px 15px 35px rgba(0,0,0,0.1);
+        border-top: 8px solid #0033a0; /* That blue bar at the top of the card */
+        max-width: 500px;
+        margin: auto;
+        text-align: center;
+        animation: slideUp 1s ease-out;
+    }
+
+    /* 5. Header Bar */
+    .header-bar {
+        background-color: #0033a0;
+        padding: 15px;
+        position: fixed;
+        top: 0; left: 0; width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+    }
+
+    /* 6. Text and Input Styling */
+    h2 { color: #0033a0 !important; font-family: 'Segoe UI', sans-serif; font-weight: 700; }
+    .stTextInput>div>div>input { border-radius: 5px; height: 45px; border: 1px solid #ddd; }
+    
+    /* 7. Footer */
+    .footer {
+        position: fixed;
+        bottom: 20px; width: 100%;
+        text-align: center;
+        color: #888;
+        font-size: 12px;
+    }
+
+    /* 8. Modern Button */
+    .stButton>button {
+        background-color: #0033a0 !important;
         color: white !important;
-        border-radius: 8px;
         width: 100%;
+        height: 45px;
+        border-radius: 5px;
         font-weight: bold;
+        transition: 0.3s;
     }
-    .stButton>button:hover {
-        background-color: #ffc72c;
-        color: #0033a0 !important;
-    }
+    .stButton>button:hover { background-color: #00267a !important; transform: scale(1.02); }
+    
+    /* Hide Streamlit Header/Footer */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. SESSION STATE ---
+# --- 3. LOGIC FOR SPLASH SCREEN ---
+if 'splash_done' not in st.session_state:
+    # Create the Splash Screen HTML
+    splash = st.empty()
+    splash.markdown("""
+        <div id="splash-screen">
+            <h1 style="font-size: 50px;">MEGAWORLD</h1>
+            <p style="letter-spacing: 5px;">INTERNATIONAL</p>
+            <div style="border: 4px solid #f3f3f3; border-top: 4px solid #ffc72c; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite;"></div>
+            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+        </div>
+    """, unsafe_allow_html=True)
+    time.sleep(3) # How long the splash screen stays
+    splash.empty()
+    st.session_state.splash_done = True
+
+# --- 4. SESSION STATE FOR LOGIN ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'view' not in st.session_state:
     st.session_state.view = 'login'
 
-# --- 4. LOGIN / REGISTER UI ---
+# --- 5. UI CONTENT ---
 if not st.session_state.logged_in:
-    # Use columns to center the card
-    _, col2, _ = st.columns([1, 2, 1])
+    # Top Logo Bar
+    st.markdown('<div class="header-bar"><span style="color:white; font-weight:bold; margin-left:20px;">MEGAWORLD INTERNATIONAL</span></div>', unsafe_allow_html=True)
+
+    # Centering the Login Card
+    st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
+    _, col2, _ = st.columns([1, 1.2, 1])
 
     with col2:
-        st.markdown('<div class="login-container">', unsafe_allow_html=True)
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
         if st.session_state.view == 'login':
-            st.markdown("<h3>🏢 Agent Login</h3>", unsafe_allow_html=True)
-            user = st.text_input("Username or REMS ID", placeholder="Enter your ID...")
-            pw = st.text_input("Password", type="password", placeholder="Enter password...")
+            st.markdown("<h2>User Login</h2>", unsafe_allow_html=True)
+            email = st.text_input("", placeholder="Email", label_visibility="collapsed")
+            password = st.text_input("", type="password", placeholder="Password", label_visibility="collapsed")
             
-            if st.button("LOG IN"):
-                if user == "admin" and pw == "1234":
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("LOGIN"):
+                if email == "admin" and password == "1234":
                     st.session_state.logged_in = True
                     st.rerun()
                 else:
-                    st.error("Invalid Username or Password")
+                    st.error("Invalid Login")
             
-            st.markdown("<p style='text-align:center; margin-top:15px;'>Don't have an account?</p>", unsafe_allow_html=True)
-            if st.button("REGISTER NEW ACCOUNT"):
-                st.session_state.view = 'register'
-                st.rerun()
+            st.markdown("<br><a href='#' style='color:#0033a0; text-decoration:none; font-size:14px;'>Need an account? Register</a>", unsafe_allow_html=True)
 
-        else:
-            st.markdown("<h3>📝 Agent Registration</h3>", unsafe_allow_html=True)
-            new_user = st.text_input("Full Name")
-            rems_id = st.text_input("REMS ID")
-            new_pw = st.text_input("Create Password", type="password")
-            
-            if st.button("COMPLETE REGISTRATION"):
-                st.success("Success! Please log in.")
-                time.sleep(1)
-                st.session_state.view = 'login'
-                st.rerun()
-            
-            if st.button("CANCEL"):
-                st.session_state.view = 'login'
-                st.rerun()
-        
-        st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 5. THE MAIN PORTAL (Logged In) ---
+    # Footer
+    st.markdown('<div class="footer">© 2026 Megaworld International Training and Business Development Group. All Rights Reserved.</div>', unsafe_allow_html=True)
+
+# --- 6. MAIN PORTAL AFTER LOGIN ---
 else:
-    # Top Header
-    st.markdown('<div class="top-nav"><h1>MEGAWORLD INTERNATIONAL</h1><p>Training & Business Development Group</p></div>', unsafe_allow_html=True)
-
-    tab_dashboard, tab_requests, tab_manage = st.tabs(["🏠 Dashboard", "📝 Submit Requests", "⚙️ Admin Tools"])
-
-    with tab_dashboard:
-        st.subheader("Welcome back, Supremo!")
-        st.write("You are logged in to the BD Monitoring Portal.")
-        # Place your Dashboard metrics/GSheets display here
-
-    with tab_requests:
-        request_type = st.selectbox("What would you like to request?", ["Site Tripping", "Key Requisition", "Training/Presentation"])
-        
-        with st.form("request_form"):
-            st.write(f"### {request_type} Form")
-            # Dynamic fields based on selection
-            name = st.text_input("Requester Name")
-            details = st.text_area("Details / Notes")
-            
-            if st.form_submit_button("Submit to BD Group"):
-                st.success(f"Your {request_type} has been submitted!")
-
-    with tab_manage:
-        st.info("This area is restricted to authorized personnel.")
-
-    if st.sidebar.button("Log Out"):
+    st.markdown('<div class="header-bar"><span style="color:white; font-weight:bold; margin-left:20px;">MEGAWORLD INTERNATIONAL</span></div>', unsafe_allow_html=True)
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    st.success("Welcome back, Supremo! You are now viewing the full portal.")
+    if st.button("Log Out"):
         st.session_state.logged_in = False
+        st.session_state.splash_done = True # Skip splash on logout
         st.rerun()
