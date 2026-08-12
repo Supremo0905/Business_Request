@@ -6,7 +6,7 @@ import time
 # --- 1. PAGE CONFIG ---
 st.set_page_config(page_title="Training Portal", page_icon="🏢", layout="wide")
 
-# --- 2. LUXURY CSS ---
+# --- 2. PREMIUM CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
@@ -22,39 +22,28 @@ st.markdown("""
         box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6) !important;
         width: 100%; max-width: 550px; margin: auto;
     }
-
-    .main-head { color: #00227a !important; font-weight: 700; text-align: center; font-size: 30px !important; text-transform: uppercase; margin-bottom: 25px; }
+    .main-head { color: #00227a !important; font-weight: 700; text-align: center; font-size: 28px !important; text-transform: uppercase; margin-bottom: 25px; }
     .stButton>button { background: #00227a !important; color: white !important; width: 100%; border-radius: 10px !important; font-weight: 600; padding: 12px; border: none !important; }
     .stButton>button:hover { background: #ffb800 !important; color: #00227a !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. SMART DATABASE CONNECTION ---
+# --- 3. DATABASE CONNECTION ---
 def load_data():
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df = conn.read(ttl=0)
-        
-        # SAFETY CHECK: If sheet is empty or missing columns, create them
-        required_columns = ['Full_Name', 'Email', 'Password', 'Status']
-        if df is None or df.empty:
-            df = pd.DataFrame(columns=required_columns)
-        for col in required_columns:
-            if col not in df.columns:
-                df[col] = None
-        
         return df, conn
     except Exception as e:
-        st.error(f"🛑 Connection Error: {e}")
+        st.error(f"Connection error. Please verify Service Account Secrets.")
         return None, None
 
-# --- 4. SESSION STATE ---
+# --- 4. UI LOGIC ---
 if 'view' not in st.session_state: st.session_state.view = 'login'
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'is_admin' not in st.session_state: st.session_state.is_admin = False
 
-# --- 5. UI ---
-st.markdown('<div style="position:fixed;top:0;left:0;width:100%;padding:15px 50px;background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,0.1);z-index:1000;color:white;font-weight:700;">MEGAWORLD INTERNATIONAL</div>', unsafe_allow_html=True)
+st.markdown('<div style="position:fixed;top:0;left:0;width:100%;padding:15px 50px;background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);z-index:1000;color:white;font-weight:700;">LOREM IPSUM</div>', unsafe_allow_html=True)
 
 if not st.session_state.logged_in:
     st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)
@@ -65,82 +54,73 @@ if not st.session_state.logged_in:
 
         if st.session_state.view == 'login':
             st.markdown('<div class="main-head">Training Portal</div>', unsafe_allow_html=True)
-            email = st.text_input("Email", placeholder="Enter Email", label_visibility="collapsed")
-            pw = st.text_input("Password", type="password", placeholder="Enter Password", label_visibility="collapsed")
+            email = st.text_input("Email", placeholder="Email", label_visibility="collapsed")
+            pw = st.text_input("Password", type="password", placeholder="Password", label_visibility="collapsed")
             
             if st.button("ACCESS PORTAL"):
-                # ADMIN BYPASS
                 if email == "admin@megaworld-marketing.com" and pw == "supremo2024":
                     st.session_state.logged_in = True
                     st.session_state.is_admin = True
                     st.rerun()
                 else:
                     df, conn = load_data()
-                    if df is not None and not df.empty:
-                        # Normalize columns to handle minor typos
+                    if df is not None:
                         user = df[(df['Email'] == email) & (df['Password'].astype(str) == str(pw))]
                         if not user.empty:
                             if user.iloc[0]['Status'] == 'Approved':
                                 st.session_state.logged_in = True
                                 st.rerun()
                             else:
-                                st.warning("⏳ Access Pending Approval.")
+                                st.warning("⏳ Pending Approval.")
                         else:
                             st.error("Invalid Credentials.")
 
-            if st.button("New Agent? Register"):
+            if st.button("Register Account"):
                 st.session_state.view = 'register'
                 st.rerun()
 
         else:
             st.markdown('<div class="main-head">Registration</div>', unsafe_allow_html=True)
-            new_name = st.text_input("Full Name")
-            new_email = st.text_input("Email Address")
-            new_pw = st.text_input("Create Password", type="password")
+            name = st.text_input("Full Name")
+            email_reg = st.text_input("Email Address")
+            pass_reg = st.text_input("Password", type="password")
             
             if st.button("SUBMIT REGISTRATION"):
                 df, conn = load_data()
                 if df is not None:
-                    if new_email in df['Email'].values:
-                        st.error("Email already registered.")
-                    else:
-                        new_row = pd.DataFrame([{"Full_Name": new_name, "Email": new_email, "Password": new_pw, "Status": "Pending"}])
-                        updated_df = pd.concat([df, new_row], ignore_index=True)
-                        conn.update(data=updated_df)
-                        st.success("Registration sent! Please notify Admin.")
-                        time.sleep(2)
-                        st.session_state.view = 'login'
-                        st.rerun()
+                    # Explicitly convert sheet to list of dicts or append row
+                    new_row = pd.DataFrame([{"Full_Name": name, "Email": email_reg, "Password": pass_reg, "Status": "Pending"}])
+                    updated_df = pd.concat([df, new_row], ignore_index=True)
+                    conn.update(data=updated_df)
+                    st.success("Submitted! Awaiting approval.")
+                    time.sleep(2)
+                    st.session_state.view = 'login'
+                    st.rerun()
             
             if st.button("Back to Login"):
                 st.session_state.view = 'login'
                 st.rerun()
 
 else:
-    st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
+    # --- LOGGED IN CONTENT ---
     if st.session_state.is_admin:
-        st.title("🛡️ Admin Dashboard")
+        st.title("🛡️ Admin Approval")
         df, conn = load_data()
-        if df is not None:
-            # Added a check to make sure 'Status' exists before filtering
-            if 'Status' in df.columns:
-                pending = df[df['Status'] == 'Pending']
-                if not pending.empty:
-                    for idx, row in pending.iterrows():
-                        c1, c2 = st.columns([4,1])
-                        c1.write(f"👤 {row['Full_Name']} ({row['Email']})")
-                        if c2.button("Approve", key=f"btn_{idx}"):
-                            df.at[idx, 'Status'] = 'Approved'
-                            conn.update(data=df)
-                            st.rerun()
-                else:
-                    st.info("No pending requests.")
-            else:
-                st.error("Sheet format error: 'Status' column missing.")
+        pending = df[df['Status'] == 'Pending']
+        if not pending.empty:
+            for idx, row in pending.iterrows():
+                c1, c2 = st.columns([3, 1])
+                c1.write(f"{row['Full_Name']} ({row['Email']})")
+                if c2.button("Approve", key=idx):
+                    df.at[idx, 'Status'] = 'Approved'
+                    conn.update(data=df)
+                    st.rerun()
+        else:
+            st.info("No pending requests.")
     else:
-        st.title("Welcome to the Portal")
-        st.write("Logged in successfully.")
-    
+        st.title("🏠 Training Dashboard")
+        st.write("Welcome to the suite.")
+
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
