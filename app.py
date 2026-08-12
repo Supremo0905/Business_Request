@@ -2,178 +2,220 @@ import streamlit as st
 import time
 
 # --- 1. PAGE CONFIG ---
-st.set_page_config(page_title="Megaworld International | Premium Portal", page_icon="🏢", layout="wide")
+st.set_page_config(page_title="Executive Portal", page_icon="🏢", layout="wide")
 
-# --- 2. LUXURY CSS (Glassmorphism & High-End Design) ---
+# --- 2. LUXURY RESPONSIVE CSS ---
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
-    /* Full Page Background - Luxury Real Estate Look */
+    /* Background and Global Styles */
     .stApp {
-        background: linear-gradient(rgba(0, 51, 160, 0.6), rgba(0, 51, 160, 0.6)), 
+        background: linear-gradient(rgba(0, 31, 100, 0.7), rgba(0, 31, 100, 0.7)), 
                     url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
         background-size: cover;
         background-position: center;
+        background-attachment: fixed;
         font-family: 'Inter', sans-serif;
     }
 
-    /* Remove Streamlit branding decorations */
-    header, footer, .stDeployButton {visibility: hidden;}
+    /* Remove Streamlit branding */
+    header, footer, .stDeployButton, [data-testid="stHeader"] {visibility: hidden !important;}
 
-    /* Top Navigation Bar */
+    /* RESPONSIVE TOP NAV */
     .nav-bar {
         position: fixed;
         top: 0; left: 0; width: 100%;
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        padding: 20px 50px;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(15px);
+        padding: 15px 5%;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         z-index: 1000;
         display: flex;
         justify-content: space-between;
-    }
-
-    /* Centered Login Container */
-    .main-container {
-        display: flex;
-        justify-content: center;
         align-items: center;
-        height: 100vh;
     }
+    .nav-bar .logo { color: white; font-weight: 700; letter-spacing: 2px; font-size: clamp(14px, 4vw, 18px); }
+    .nav-bar .meta { color: rgba(255,255,255,0.6); font-size: 11px; }
 
-    /* Glassmorphism Card */
+    /* MOBILE RESPONSIVE LOGIN CARD */
     div[data-testid="stVerticalBlock"] > div:has(div.login-card-anchor) {
-        background: rgba(255, 255, 255, 0.95);
-        padding: 50px !important;
-        border-radius: 20px !important;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
-        max-width: 450px;
-        margin: auto;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-    }
-
-    /* Titles */
-    h1, h2, h3 {
-        color: #0033a0 !important;
-        text-align: center;
-        font-weight: 700 !important;
-        letter-spacing: -1px;
-    }
-
-    /* Input Fields Modernization */
-    input {
-        border-radius: 10px !important;
-        border: 1px solid #e0e0e0 !important;
-        padding: 12px !important;
-        background-color: #f8f9fa !important;
-    }
-
-    /* Premium Button */
-    .stButton>button {
+        background: rgba(255, 255, 255, 0.98);
+        padding: clamp(30px, 8vw, 60px) !important;
+        border-radius: 24px !important;
+        box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6) !important;
         width: 100%;
-        background-color: #0033a0 !important;
-        color: white !important;
-        padding: 15px !important;
-        border-radius: 10px !important;
+        max-width: 420px; /* PC Width */
+        margin: auto;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Styling for the Logo/Avatar placeholder on the card */
+    .avatar-placeholder {
+        width: 80px;
+        height: 80px;
+        background: #f0f2f6;
+        border-radius: 20px;
+        margin: 0 auto 25px auto;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    /* Titles & Text */
+    h2 {
+        color: #00227a !important;
         font-weight: 700 !important;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        border: none !important;
-        transition: 0.4s all;
-        margin-top: 20px;
+        letter-spacing: -1.5px !important;
+        margin-bottom: 10px !important;
+        text-align: center;
+        font-size: 28px !important;
+    }
+    .sub-text {
+        color: #555 !important;
+        text-align: center;
+        margin-bottom: 30px !important;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    /* Form Fields */
+    .stTextInput input {
+        border-radius: 12px !important;
+        background: #f8f9fc !important;
+        padding: 15px !important;
+        border: 1px solid #dee2e6 !important;
+        font-size: 14px !important;
     }
     
+    /* ACCESS PORTAL BUTTON */
+    .stButton>button {
+        background: #00227a !important;
+        color: white !important;
+        width: 100%;
+        padding: 16px !important;
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        border: none !important;
+        margin-top: 15px;
+        transition: all 0.3s ease;
+    }
     .stButton>button:hover {
-        background-color: #ffc72c !important;
-        color: #0033a0 !important;
-        transform: translateY(-2px);
+        background: #ffb800 !important;
+        color: #00227a !important;
+        transform: translateY(-3px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     }
 
-    /* Custom Splash Overlay */
+    /* FORGOT PASSWORD LINK */
+    .forgot-link {
+        margin-top: 30px;
+        text-align: center;
+        font-size: 13px;
+        color: #666;
+    }
+    .forgot-link a {
+        color: #00227a;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    /* SPLASH SCREEN */
     .splash {
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background: #0033a0;
-        z-index: 9999;
+        background: #001f64;
+        z-index: 10000;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
-        color: white;
-        font-size: 40px;
-        font-weight: bold;
-        animation: fadeOut 2s forwards;
+        animation: fadeOut 1s forwards;
         animation-delay: 1.5s;
     }
     @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
 
-    /* Footer Text */
-    .custom-footer {
-        text-align: center;
-        color: rgba(255,255,255,0.7);
-        font-size: 13px;
+    /* Footer for mobile/desktop */
+    .footer-note {
         position: fixed;
-        bottom: 30px;
+        bottom: 20px;
         width: 100%;
+        text-align: center;
+        color: rgba(255,255,255,0.5);
+        font-size: 11px;
+        z-index: 500;
+    }
+
+    /* Media query to ensure card looks good on mobile screens */
+    @media (max-width: 640px) {
+        div[data-testid="stVerticalBlock"] > div:has(div.login-card-anchor) {
+            max-width: 90% !important;
+            padding: 30px !important;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. THE SPLASH SCREEN ---
-if 'init' not in st.session_state:
-    st.markdown('<div class="splash">MEGAWORLD INTERNATIONAL</div>', unsafe_allow_html=True)
-    time.sleep(2.5)
-    st.session_state.init = True
+# --- 3. SPLASH SCREEN ANIMATION ---
+if 'initialized' not in st.session_state:
+    st.markdown('<div class="splash"><h1 style="color:white; letter-spacing:10px;">LOREM IPSUM</h1><div style="width:50px; height:2px; background:#ffb800;"></div></div>', unsafe_allow_html=True)
+    time.sleep(1.8)
+    st.session_state.initialized = True
 
-# --- 4. TOP NAVIGATION ---
+# --- 4. TOP NAVIGATION (MOBILE & PC READY) ---
 st.markdown("""
     <div class="nav-bar">
-        <div style="color: white; font-weight: bold; letter-spacing: 2px;">MEGAWORLD INTERNATIONAL</div>
-        <div style="color: rgba(255,255,255,0.7); font-size: 12px;">EST. 1989</div>
+        <div class="logo">LOREM IPSUM</div>
+        <div class="meta">EST. 1989</div>
     </div>
 """, unsafe_allow_html=True)
 
-# --- 5. LOGIN LOGIC ---
+# --- 5. CENTERED LOGIN CONTENT ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    # This spacing pushes the card to the center
+    # Use empty space to vertical center
     st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
     
-    # We use a column layout to wrap everything in a "Card"
-    _, center_col, _ = st.columns([1, 1.5, 1])
+    # Grid system: 3 columns (Narrow, Content, Narrow)
+    # The middle column acts as the card wrapper
+    _, col_mid, _ = st.columns([0.1, 2, 0.1]) if st.session_state.get('mobile_view', False) else st.columns([1, 1.2, 1])
 
-    with center_col:
-        # This empty markdown acts as an "anchor" for our CSS to find and style the card
+    with col_mid:
         st.markdown('<div class="login-card-anchor"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="avatar-placeholder"></div>', unsafe_allow_html=True)
         
-        st.write("### AGENT PORTAL")
-        st.write("Welcome back. Please enter your corporate credentials.")
+        st.markdown("<h2>AGENT PORTAL</h2>", unsafe_allow_html=True)
+        st.markdown('<p class="sub-text">Enter your credentials to access the executive dashboard.</p>', unsafe_allow_html=True)
         
-        email = st.text_input("Email Address", placeholder="e.g. supremo@megaworld.com")
-        password = st.text_input("Password", type="password", placeholder="••••••••")
+        user_input = st.text_input("User ID", placeholder="Corporate ID", label_visibility="collapsed")
+        pass_input = st.text_input("Password", type="password", placeholder="Password", label_visibility="collapsed")
         
-        if st.button("Access Portal"):
-            if email == "admin" and password == "1234":
+        if st.button("ACCESS PORTAL"):
+            if user_input == "admin" and pass_input == "1234":
                 st.session_state.logged_in = True
-                st.success("Access Granted. Redirecting...")
+                st.success("Authorized. Initializing suite...")
                 time.sleep(1)
                 st.rerun()
             else:
-                st.error("Invalid credentials. Please try again.")
+                st.error("Access Denied: Invalid Credentials.")
 
-        st.markdown("<p style='text-align:center; font-size: 14px; margin-top:20px; color:#666;'>Forgot password? Contact IT Support</p>", unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class="forgot-link">
+                Forgot password? <br>
+                <a href="mailto:mwi.bdcmanagement@megaworld-marketing.com">contact mwi.bdcmanagement@megaworld-marketing.com</a>
+            </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown('<div class="custom-footer">© 2026 Megaworld International Training and Business Development Group.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="footer-note">© 2026 TRAINING & BUSINESS DEVELOPMENT GROUP. PRIVATE PORTAL.</div>', unsafe_allow_html=True)
 
-# --- 6. POST-LOGIN (DASHBOARD) ---
+# --- 6. AUTHENTICATED AREA ---
 else:
     st.markdown("<br><br><br><br>", unsafe_allow_html=True)
-    st.title("Welcome to the Executive Suite")
-    st.write("You are logged in as Supremo.")
+    st.title("Executive Dashboard")
+    st.info("You are currently viewing the restricted Management Portal.")
     
-    if st.sidebar.button("Log Out"):
+    if st.sidebar.button("Sign Out"):
         st.session_state.logged_in = False
         st.rerun()
