@@ -1,191 +1,140 @@
 import streamlit as st
+import pandas as pd
+from streamlit_gsheets import GSheetsConnection
 import time
 
 # --- 1. PAGE CONFIG ---
 st.set_page_config(page_title="Training Portal | Executive Suite", page_icon="🏢", layout="wide")
 
-# --- 2. LUXURY RESPONSIVE CSS (Wider & Balanced) ---
+# --- 2. PREMIUM CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-
-    /* Background and Global Styles */
     .stApp {
-        background: linear-gradient(rgba(0, 31, 100, 0.75), rgba(0, 31, 100, 0.75)), 
+        background: linear-gradient(rgba(0, 31, 100, 0.8), rgba(0, 31, 100, 0.8)), 
                     url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        font-family: 'Inter', sans-serif;
+        background-size: cover; background-attachment: fixed; font-family: 'Inter', sans-serif;
     }
-
-    /* Remove Streamlit branding */
     header, footer, .stDeployButton, [data-testid="stHeader"] {visibility: hidden !important;}
-
-    /* RESPONSIVE TOP NAV */
-    .nav-bar {
-        position: fixed;
-        top: 0; left: 0; width: 100%;
-        background: rgba(255, 255, 255, 0.08);
-        backdrop-filter: blur(15px);
-        padding: 15px 50px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        z-index: 1000;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .nav-bar .logo { color: white; font-weight: 700; letter-spacing: 2px; font-size: 20px; }
-    .nav-bar .meta { color: rgba(255,255,255,0.6); font-size: 11px; }
-
-    /* WIDER & STRETCHED LOGIN CARD FIX */
-    div[data-testid="stVerticalBlock"] > div:has(div.login-card-anchor) {
-        background: rgba(255, 255, 255, 1);
-        padding: 40px 60px !important; /* Balanced padding: less vertical, more horizontal */
-        border-radius: 20px !important;
-        box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.8) !important;
-        width: 100%;
-        max-width: 550px; /* STRETCHED: Increased from 420px to 550px */
-        margin: auto;
-        border: none !important;
-    }
-
-    /* Styling for the Avatar placeholder (Better proportions) */
-    .avatar-placeholder {
-        width: 70px;
-        height: 70px;
-        background: #f0f2f6;
-        border-radius: 15px;
-        margin: 0 auto 20px auto;
-        box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    /* Titles & Text */
-    h2 {
-        color: #00227a !important;
-        font-weight: 700 !important;
-        letter-spacing: -1px !important;
-        margin-bottom: 5px !important;
-        text-align: center;
-        font-size: 32px !important; /* Larger and bolder */
-    }
-    .sub-text {
-        color: #666 !important;
-        text-align: center;
-        margin-bottom: 25px !important;
-        font-size: 15px;
-    }
-
-    /* Form Fields Styling */
-    .stTextInput input {
-        border-radius: 8px !important;
-        background: #f8f9fc !important;
-        padding: 12px 15px !important;
-        border: 1px solid #ddd !important;
-        font-size: 15px !important;
-    }
     
-    /* ACCESS PORTAL BUTTON (Balanced width) */
-    .stButton>button {
-        background: #00227a !important;
-        color: white !important;
-        width: 100%;
-        padding: 12px !important;
-        border-radius: 8px !important;
-        font-weight: 600 !important;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        border: none !important;
-        margin-top: 10px;
-        transition: 0.3s;
-    }
-    .stButton>button:hover {
-        background: #ffb800 !important;
-        color: #00227a !important;
-        transform: translateY(-2px);
-    }
+    @keyframes viewTransition { 0% { opacity: 0; transform: translateX(20px); } 100% { opacity: 1; transform: translateX(0); } }
 
-    /* FORGOT PASSWORD LINK */
-    .forgot-link {
-        margin-top: 25px;
-        text-align: center;
-        font-size: 13px;
-        color: #777;
+    div[data-testid="stVerticalBlock"] > div:has(div.login-card-anchor) {
+        background: white; padding: 50px 60px !important; border-radius: 24px !important;
+        box-shadow: 0 50px 100px rgba(0, 0, 0, 0.5) !important;
+        width: 100%; max-width: 550px; margin: auto; animation: viewTransition 0.6s ease-out;
     }
-    .forgot-link a {
-        color: #00227a;
-        text-decoration: none;
-        font-weight: 600;
-    }
-
-    /* Footer Text */
-    .footer-note {
-        position: fixed;
-        bottom: 20px;
-        width: 100%;
-        text-align: center;
-        color: rgba(255,255,255,0.4);
-        font-size: 11px;
-    }
+    h2 { color: #00227a !important; font-weight: 700; text-align: center; font-size: 36px !important; }
+    .stButton>button { background: #00227a !important; color: white !important; width: 100%; padding: 14px !important; border-radius: 10px !important; font-weight: 600; text-transform: uppercase; border: none !important; transition: 0.4s; }
+    .stButton>button:hover { background: #ffb800 !important; color: #00227a !important; }
+    .secondary-btn>div>button { background: transparent !important; color: #00227a !important; border: 2px solid #00227a !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. SESSION STATE LOGIC ---
-if 'initialized' not in st.session_state:
-    st.session_state.initialized = True
+# --- 3. DATABASE CONNECTION ---
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
+def get_users():
+    return conn.read(ttl=0) # Read fresh data every time
 
-# --- 4. TOP NAVIGATION ---
-st.markdown("""
-    <div class="nav-bar">
-        <div class="logo">LOREM IPSUM</div>
-        <div class="meta">EST. 1989</div>
-    </div>
-""", unsafe_allow_html=True)
+# --- 4. SESSION STATE ---
+if 'view' not in st.session_state: st.session_state.view = 'login'
+if 'logged_in' not in st.session_state: st.session_state.logged_in = False
+if 'user_role' not in st.session_state: st.session_state.user_role = None
 
-# --- 5. CENTERED LOGIN CONTENT ---
+# --- 5. LOGIN/REGISTER LOGIC ---
 if not st.session_state.logged_in:
-    # Spacer to push card down
-    st.markdown("<br><br><br><br><br><br>", unsafe_allow_html=True)
-    
-    # We use a wider column setting to allow the card to "stretch"
+    st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
     _, col_mid, _ = st.columns([1, 2, 1])
 
     with col_mid:
         st.markdown('<div class="login-card-anchor"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="avatar-placeholder"></div>', unsafe_allow_html=True)
         
-        st.markdown("<h2>TRAINING PORTAL</h2>", unsafe_allow_html=True)
-        st.markdown('<p class="sub-text">Welcome back. Enter your credentials to access the suite.</p>', unsafe_allow_html=True)
-        
-        # Creating a neat layout inside the card
-        user_input = st.text_input("User ID", placeholder="Corporate Email / ID", label_visibility="collapsed")
-        pass_input = st.text_input("Password", type="password", placeholder="Password", label_visibility="collapsed")
-        
-        if st.button("ACCESS PORTAL"):
-            if user_input == "admin" and pass_input == "1234":
-                st.session_state.logged_in = True
+        # --- LOGIN VIEW ---
+        if st.session_state.view == 'login':
+            st.markdown("<h2>TRAINING PORTAL</h2>", unsafe_allow_html=True)
+            email = st.text_input("Email", placeholder="Corporate Email", label_visibility="collapsed")
+            pw = st.text_input("Password", type="password", placeholder="Password", label_visibility="collapsed")
+            
+            if st.button("ACCESS PORTAL"):
+                users_df = get_users()
+                # Check if user exists
+                user_record = users_df[(users_df['Email'] == email) & (users_df['Password'] == str(pw))]
+                
+                if not user_record.empty:
+                    status = user_record.iloc[0]['Status']
+                    role = user_record.iloc[0]['Role']
+                    
+                    if status == 'Approved' or role == 'Admin':
+                        st.session_state.logged_in = True
+                        st.session_state.user_role = role
+                        st.rerun()
+                    else:
+                        st.warning("⚠️ Your account is awaiting Admin Approval.")
+                else:
+                    st.error("Invalid Email or Password.")
+
+            if st.button("CREATE AN ACCOUNT"):
+                st.session_state.view = 'register'
                 st.rerun()
-            else:
-                st.error("Invalid credentials.")
 
-        st.markdown(f"""
-            <div class="forgot-link">
-                Forgot password? <br>
-                <a href="mailto:mwi.bdcmanagement@megaworld-marketing.com">contact mwi.bdcmanagement@megaworld-marketing.com</a>
-            </div>
-        """, unsafe_allow_html=True)
+        # --- REGISTRATION VIEW ---
+        else:
+            st.markdown("<h2>REGISTRATION</h2>", unsafe_allow_html=True)
+            full_name = st.text_input("Full Name", placeholder="Full Name")
+            email_reg = st.text_input("Email", placeholder="Corporate Email")
+            pass_reg = st.text_input("Create Password", type="password")
+            
+            if st.button("SUBMIT FOR APPROVAL"):
+                users_df = get_users()
+                if email_reg in users_df['Email'].values:
+                    st.error("Email already exists!")
+                else:
+                    # Create new row
+                    new_user = pd.DataFrame([{
+                        "Full_Name": full_name,
+                        "Email": email_reg,
+                        "Password": pass_reg,
+                        "Status": "Pending",
+                        "Role": "User"
+                    }])
+                    updated_df = pd.concat([users_df, new_user], ignore_index=True)
+                    conn.update(data=updated_df)
+                    st.success("Success! Contact Admin for approval.")
+                    time.sleep(2)
+                    st.session_state.view = 'login'
+                    st.rerun()
 
-    st.markdown('<div class="footer-note">© 2026 TRAINING & BUSINESS DEVELOPMENT GROUP. PRIVATE ACCESS.</div>', unsafe_allow_html=True)
+            if st.button("BACK TO LOGIN"):
+                st.session_state.view = 'login'
+                st.rerun()
 
 # --- 6. AUTHENTICATED AREA ---
 else:
-    st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
-    st.title("Admin Dashboard")
-    st.success("Authorized. Welcome to the Training Portal.")
-    
+    st.sidebar.title("Navigation")
     if st.sidebar.button("Sign Out"):
         st.session_state.logged_in = False
         st.rerun()
+
+    if st.session_state.user_role == 'Admin':
+        st.title("🛡️ Admin Approval Dashboard")
+        st.write("Review and approve new registrants below.")
+        
+        users_df = get_users()
+        pending_users = users_df[users_df['Status'] == 'Pending']
+        
+        if not pending_users.empty:
+            for index, row in pending_users.iterrows():
+                col1, col2 = st.columns([3, 1])
+                col1.write(f"**{row['Full_Name']}** ({row['Email']})")
+                if col2.button(f"Approve", key=index):
+                    users_df.at[index, 'Status'] = 'Approved'
+                    conn.update(data=users_df)
+                    st.success(f"Approved {row['Full_Name']}!")
+                    st.rerun()
+        else:
+            st.info("No pending approvals.")
+
+    else:
+        st.title("🏠 Training Dashboard")
+        st.write("Welcome to the Training Suite. Content coming soon.")
