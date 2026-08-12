@@ -1,100 +1,171 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pandas as pd
+from streamlit_gsheets import GSheetsConnection
 from datetime import datetime
+import time
 
-# --- CONFIGURATION ---
-st.set_page_config(page_title="BD Development Portal", layout="wide")
+# --- 1. PAGE CONFIG ---
+st.set_page_config(page_title="Megaworld BD Portal", page_icon="🏢", layout="wide")
 
-# 1. SETUP GOOGLE SHEETS CONNECTION
-# Note: You will put your Sheet URL in the "Secrets" later
-conn = st.connection("gsheets", type=GSheetsConnection)
+# --- 2. CUSTOM CSS (The "Modernizer") ---
+st.markdown("""
+    <style>
+    /* Main Background */
+    .stApp {
+        background-color: #f4f7f9;
+    }
 
-# --- LOGIN SECTION ---
-def login():
-    st.sidebar.title("🔐 Staff Access")
-    password = st.sidebar.text_input("Enter Admin Password", type="password")
-    if password == "admin123": # Change this to your preferred password
-        return True
-    return False
+    /* Top Navigation Bar Simulation */
+    .top-nav {
+        background-color: #0033a0; /* Megaworld Blue */
+        padding: 15px;
+        border-radius: 0px 0px 15px 15px;
+        color: white;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+    }
 
-is_admin = login()
+    /* Animation for the Login Card */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 
-# --- MAIN INTERFACE ---
-st.title("🚀 Business Development Request Portal")
-st.markdown("Please select a request type below to submit your details.")
+    .login-card {
+        background-color: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0px 10px 30px rgba(0,0,0,0.1);
+        animation: fadeIn 0.8s ease-out;
+        max-width: 450px;
+        margin: auto;
+    }
 
-# Create Tabs for different requests
-tab1, tab2, tab3 = st.tabs(["📍 Site Tripping", "🔑 Key Request", "📚 Training Request"])
+    /* Button Styling */
+    .stButton>button {
+        background-color: #0033a0;
+        color: white;
+        border-radius: 8px;
+        border: none;
+        padding: 10px 25px;
+        transition: 0.3s;
+    }
+    
+    .stButton>button:hover {
+        background-color: #ffc72c; /* Megaworld Gold */
+        color: #0033a0;
+    }
 
-# --- TAB 1: SITE TRIPPING ---
-with tab1:
-    with st.form("tripping_form"):
-        name = st.text_input("Requester Name")
-        project = st.text_input("Project Name/Location")
-        date = st.date_input("Target Date")
-        submit = st.form_submit_button("Submit Tripping Request")
+    /* Tabs Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 20px;
+        justify-content: center;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        background-color: white;
+        border-radius: 10px 10px 0px 0px;
+        padding: 0px 30px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- 3. SESSION STATE (Handling Login/Register) ---
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+if 'view' not in st.session_state:
+    st.session_state.view = 'login'
+
+# --- 4. GOOGLE SHEETS CONNECTION ---
+# Make sure you have your secrets set up for this!
+try:
+    conn = st.connection("gsheets", type=GSheetsConnection)
+except:
+    st.error("GSheets Connection not configured.")
+
+# --- 5. LOGIN / REGISTER UI ---
+if not st.session_state.logged_in:
+    # Centered Container
+    _, col2, _ = st.columns([1, 2, 1])
+
+    with col2:
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
-        if submit and name:
-            new_data = pd.DataFrame([{
-                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Request_Type": "Site Tripping",
-                "Requester_Name": name,
-                "Details": f"Project: {project}, Date: {date}",
-                "Status": "Pending"
-            }])
-            # Logic to save to GSheet
-            existing_data = conn.read(ttl=0)
-            updated_df = pd.concat([existing_data, new_data], ignore_index=True)
-            conn.update(data=updated_df)
-            st.success("Tripping Request Submitted!")
+        if st.session_state.view == 'login':
+            st.subheader("🏢 BD Agent Portal Login")
+            user = st.text_input("Username / REMS ID")
+            pw = st.text_input("Password", type="password")
+            
+            if st.button("Login"):
+                if user == "admin" and pw == "1234": # Basic logic for now
+                    st.session_state.logged_in = True
+                    st.rerun()
+                else:
+                    st.error("Invalid credentials")
+            
+            st.caption("Don't have an account?")
+            if st.button("Register Here"):
+                st.session_state.view = 'register'
+                st.rerun()
 
-# --- TAB 2: KEY REQUEST ---
-with tab2:
-    with st.form("key_form"):
-        name = st.text_input("Staff Name")
-        unit = st.text_input("Unit/Property Number")
-        purpose = st.text_area("Purpose of Request")
-        submit = st.form_submit_button("Submit Key Request")
+        else:
+            st.subheader("📝 Agent Registration")
+            new_user = st.text_input("Full Name")
+            rems_id = st.text_input("REMS ID")
+            new_pw = st.text_input("Create Password", type="password")
+            
+            if st.button("Complete Registration"):
+                st.success("Account created! Please log in.")
+                time.sleep(1)
+                st.session_state.view = 'login'
+                st.rerun()
+            
+            if st.button("Back to Login"):
+                st.session_state.view = 'login'
+                st.rerun()
         
-        if submit and name:
-            new_data = pd.DataFrame([{
-                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Request_Type": "Key Request",
-                "Requester_Name": name,
-                "Details": f"Unit: {unit}, Purpose: {purpose}",
-                "Status": "Pending"
-            }])
-            existing_data = conn.read(ttl=0)
-            updated_df = pd.concat([existing_data, new_data], ignore_index=True)
-            conn.update(data=updated_df)
-            st.success("Key Request Submitted!")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-# --- TAB 3: TRAINING REQUEST ---
-with tab3:
-    with st.form("training_form"):
-        name = st.text_input("Requesting Dept/Person")
-        topic = st.selectbox("Presentation/Topic", ["BD Presentation", "Project Overview", "Sales Training"])
-        submit = st.form_submit_button("Submit Training Request")
-        
-        if submit and name:
-            new_data = pd.DataFrame([{
-                "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "Request_Type": "Training",
-                "Requester_Name": name,
-                "Details": f"Topic: {topic}",
-                "Status": "Pending"
-            }])
-            existing_data = conn.read(ttl=0)
-            updated_df = pd.concat([existing_data, new_data], ignore_index=True)
-            conn.update(data=updated_df)
-            st.success("Training Request Submitted!")
-
-# --- MONITORING SECTION (ONLY FOR ADMIN) ---
-if is_admin:
-    st.divider()
-    st.subheader("📊 Admin Monitoring Dashboard")
-    data = conn.read(ttl=0)
-    st.dataframe(data, use_container_width=True)
+# --- 6. THE MAIN PORTAL (Logged In) ---
 else:
-    st.sidebar.info("Log in as Admin to see the Monitoring Dashboard.")
+    # Top Custom Header
+    st.markdown('<div class="top-nav"><h1>MEGAWORLD INTERNATIONAL</h1><p>Training & Business Development Group</p></div>', unsafe_allow_html=True)
+
+    # Top Menu Navigation using Tabs
+    tab_dashboard, tab_tripping, tab_key, tab_training = st.tabs([
+        "🏠 Dashboard", "📍 Site Tripping", "🔑 Key Request", "📚 Training Request"
+    ])
+
+    with tab_dashboard:
+        st.subheader("Welcome back, Supremo!")
+        # Add your Monitoring dashboard code here (st.dataframe, etc.)
+        st.info("Here you can monitor the status of your submitted requests.")
+
+    with tab_tripping:
+        with st.form("trip_form"):
+            st.write("### New Site Tripping Request")
+            name = st.text_input("Requester Name")
+            client = st.text_input("Client Name")
+            project = st.selectbox("Project Selection", ["Uptown Bonifacio", "McKinley Hill", "Westside City"])
+            date = st.date_input("Tripping Date")
+            if st.form_submit_button("Submit Request"):
+                st.success("Tripping Request Sent!")
+
+    with tab_key:
+        with st.form("key_form"):
+            st.write("### Key Requisition")
+            unit = st.text_input("Unit Number")
+            purpose = st.text_area("Purpose")
+            if st.form_submit_button("Request Key"):
+                st.balloons()
+
+    with tab_training:
+        st.write("### Book a Presentation")
+        # Add Training fields here...
+
+    # Sidebar Logout
+    if st.sidebar.button("Log Out"):
+        st.session_state.logged_in = False
+        st.rerun()
