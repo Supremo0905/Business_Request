@@ -7,165 +7,152 @@ import time
 # --- 1. PAGE CONFIG ---
 st.set_page_config(page_title="Megaworld BD Portal", page_icon="🏢", layout="wide")
 
-# --- 2. CUSTOM CSS (The "Modernizer") ---
+# --- 2. FIXED CUSTOM CSS ---
 st.markdown("""
     <style>
-    /* Main Background */
+    /* Force the main background color */
     .stApp {
         background-color: #f4f7f9;
     }
 
-    /* Top Navigation Bar Simulation */
+    /* Top Navigation Bar Styling */
     .top-nav {
         background-color: #0033a0; /* Megaworld Blue */
-        padding: 15px;
+        padding: 20px;
         border-radius: 0px 0px 15px 15px;
-        color: white;
+        color: white !important; /* Force text white */
         text-align: center;
         margin-bottom: 30px;
         box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
     }
+    .top-nav h1, .top-nav p {
+        color: white !important;
+        margin: 0;
+    }
 
-    /* Animation for the Login Card */
+    /* Modern Login Card */
+    .login-card {
+        background-color: #ffffff; /* Pure white */
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0px 10px 30px rgba(0,0,0,0.1);
+        max-width: 450px;
+        margin: auto;
+        border: 1px solid #e0e0e0;
+    }
+
+    /* FORCE TEXT COLOR INSIDE LOGIN AREA */
+    .login-card h3, .login-card p, .login-card label, .login-card div {
+        color: #1f1f1f !important; /* Dark charcoal color */
+    }
+
+    /* Fix for Streamlit input labels (the text above boxes) */
+    .stWidgetLabel p {
+        color: #1f1f1f !important;
+        font-weight: 600 !important;
+    }
+
+    /* Animation */
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
-
-    .login-card {
-        background-color: white;
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0px 10px 30px rgba(0,0,0,0.1);
+    .login-container {
         animation: fadeIn 0.8s ease-out;
-        max-width: 450px;
-        margin: auto;
     }
 
     /* Button Styling */
     .stButton>button {
         background-color: #0033a0;
-        color: white;
+        color: white !important;
         border-radius: 8px;
-        border: none;
-        padding: 10px 25px;
-        transition: 0.3s;
+        width: 100%;
+        font-weight: bold;
     }
-    
     .stButton>button:hover {
-        background-color: #ffc72c; /* Megaworld Gold */
-        color: #0033a0;
-    }
-
-    /* Tabs Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 20px;
-        justify-content: center;
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        background-color: white;
-        border-radius: 10px 10px 0px 0px;
-        padding: 0px 30px;
+        background-color: #ffc72c;
+        color: #0033a0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. SESSION STATE (Handling Login/Register) ---
+# --- 3. SESSION STATE ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 if 'view' not in st.session_state:
     st.session_state.view = 'login'
 
-# --- 4. GOOGLE SHEETS CONNECTION ---
-# Make sure you have your secrets set up for this!
-try:
-    conn = st.connection("gsheets", type=GSheetsConnection)
-except:
-    st.error("GSheets Connection not configured.")
-
-# --- 5. LOGIN / REGISTER UI ---
+# --- 4. LOGIN / REGISTER UI ---
 if not st.session_state.logged_in:
-    # Centered Container
+    # Use columns to center the card
     _, col2, _ = st.columns([1, 2, 1])
 
     with col2:
+        st.markdown('<div class="login-container">', unsafe_allow_html=True)
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
         if st.session_state.view == 'login':
-            st.subheader("🏢 BD Agent Portal Login")
-            user = st.text_input("Username / REMS ID")
-            pw = st.text_input("Password", type="password")
+            st.markdown("<h3>🏢 Agent Login</h3>", unsafe_allow_html=True)
+            user = st.text_input("Username or REMS ID", placeholder="Enter your ID...")
+            pw = st.text_input("Password", type="password", placeholder="Enter password...")
             
-            if st.button("Login"):
-                if user == "admin" and pw == "1234": # Basic logic for now
+            if st.button("LOG IN"):
+                if user == "admin" and pw == "1234":
                     st.session_state.logged_in = True
                     st.rerun()
                 else:
-                    st.error("Invalid credentials")
+                    st.error("Invalid Username or Password")
             
-            st.caption("Don't have an account?")
-            if st.button("Register Here"):
+            st.markdown("<p style='text-align:center; margin-top:15px;'>Don't have an account?</p>", unsafe_allow_html=True)
+            if st.button("REGISTER NEW ACCOUNT"):
                 st.session_state.view = 'register'
                 st.rerun()
 
         else:
-            st.subheader("📝 Agent Registration")
+            st.markdown("<h3>📝 Agent Registration</h3>", unsafe_allow_html=True)
             new_user = st.text_input("Full Name")
             rems_id = st.text_input("REMS ID")
             new_pw = st.text_input("Create Password", type="password")
             
-            if st.button("Complete Registration"):
-                st.success("Account created! Please log in.")
+            if st.button("COMPLETE REGISTRATION"):
+                st.success("Success! Please log in.")
                 time.sleep(1)
                 st.session_state.view = 'login'
                 st.rerun()
             
-            if st.button("Back to Login"):
+            if st.button("CANCEL"):
                 st.session_state.view = 'login'
                 st.rerun()
         
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div></div>', unsafe_allow_html=True)
 
-# --- 6. THE MAIN PORTAL (Logged In) ---
+# --- 5. THE MAIN PORTAL (Logged In) ---
 else:
-    # Top Custom Header
+    # Top Header
     st.markdown('<div class="top-nav"><h1>MEGAWORLD INTERNATIONAL</h1><p>Training & Business Development Group</p></div>', unsafe_allow_html=True)
 
-    # Top Menu Navigation using Tabs
-    tab_dashboard, tab_tripping, tab_key, tab_training = st.tabs([
-        "🏠 Dashboard", "📍 Site Tripping", "🔑 Key Request", "📚 Training Request"
-    ])
+    tab_dashboard, tab_requests, tab_manage = st.tabs(["🏠 Dashboard", "📝 Submit Requests", "⚙️ Admin Tools"])
 
     with tab_dashboard:
         st.subheader("Welcome back, Supremo!")
-        # Add your Monitoring dashboard code here (st.dataframe, etc.)
-        st.info("Here you can monitor the status of your submitted requests.")
+        st.write("You are logged in to the BD Monitoring Portal.")
+        # Place your Dashboard metrics/GSheets display here
 
-    with tab_tripping:
-        with st.form("trip_form"):
-            st.write("### New Site Tripping Request")
+    with tab_requests:
+        request_type = st.selectbox("What would you like to request?", ["Site Tripping", "Key Requisition", "Training/Presentation"])
+        
+        with st.form("request_form"):
+            st.write(f"### {request_type} Form")
+            # Dynamic fields based on selection
             name = st.text_input("Requester Name")
-            client = st.text_input("Client Name")
-            project = st.selectbox("Project Selection", ["Uptown Bonifacio", "McKinley Hill", "Westside City"])
-            date = st.date_input("Tripping Date")
-            if st.form_submit_button("Submit Request"):
-                st.success("Tripping Request Sent!")
+            details = st.text_area("Details / Notes")
+            
+            if st.form_submit_button("Submit to BD Group"):
+                st.success(f"Your {request_type} has been submitted!")
 
-    with tab_key:
-        with st.form("key_form"):
-            st.write("### Key Requisition")
-            unit = st.text_input("Unit Number")
-            purpose = st.text_area("Purpose")
-            if st.form_submit_button("Request Key"):
-                st.balloons()
+    with tab_manage:
+        st.info("This area is restricted to authorized personnel.")
 
-    with tab_training:
-        st.write("### Book a Presentation")
-        # Add Training fields here...
-
-    # Sidebar Logout
     if st.sidebar.button("Log Out"):
         st.session_state.logged_in = False
         st.rerun()
